@@ -37,6 +37,13 @@ export default function Nav() {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
 
+  // The landing hero is a dark stage in BOTH themes. While the nav floats over it
+  // (top of "/", before the glass background appears on scroll), force light text
+  // so it never sinks into the dark. Once scrolled the glass provides contrast and
+  // we follow the theme; on every other page we follow the theme from the start.
+  const overHero = pathname === '/' && !scrolled;
+  const barColor = overHero ? 'bg-[#F4F2EE]' : 'bg-ink';
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
@@ -61,7 +68,7 @@ export default function Nav() {
               scrolled ? 'glass shadow-[0_18px_50px_-30px_rgba(0,0,0,0.6)]' : '',
             )}
           >
-            <Link to="/" className="group flex items-center gap-2.5 text-ink" data-cursor>
+            <Link to="/" className={cn('group flex items-center gap-2.5', overHero ? 'text-[#F4F2EE]' : 'text-ink')} data-cursor>
               <Logo />
               <span className="font-display text-base font-semibold tracking-tight">QueueStorm</span>
             </Link>
@@ -75,7 +82,9 @@ export default function Nav() {
                   className={({ isActive }) =>
                     cn(
                       'rounded-full px-4 py-2 text-sm transition',
-                      isActive ? 'text-ink' : 'text-muted hover:text-ink',
+                      isActive
+                        ? (overHero ? 'text-white' : 'text-ink')
+                        : (overHero ? 'text-white/70 hover:text-white' : 'text-muted hover:text-ink'),
                     )
                   }
                 >
@@ -104,9 +113,9 @@ export default function Nav() {
                 data-cursor
               >
                 <span className="flex flex-col gap-1">
-                  <span className={cn('h-0.5 w-4 bg-ink transition', open && 'translate-y-1.5 rotate-45')} />
-                  <span className={cn('h-0.5 w-4 bg-ink transition', open && 'opacity-0')} />
-                  <span className={cn('h-0.5 w-4 bg-ink transition', open && '-translate-y-1.5 -rotate-45')} />
+                  <span className={cn('h-0.5 w-4 transition', barColor, open && 'translate-y-1.5 rotate-45')} />
+                  <span className={cn('h-0.5 w-4 transition', barColor, open && 'opacity-0')} />
+                  <span className={cn('h-0.5 w-4 transition', barColor, open && '-translate-y-1.5 -rotate-45')} />
                 </span>
               </button>
             </div>

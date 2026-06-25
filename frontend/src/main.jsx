@@ -17,7 +17,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           (drops transforms, keeps opacity). JS animations are not covered by
           the CSS reduced-motion rule, so this is required, not cosmetic. */}
       <MotionConfig reducedMotion="user">
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <App />
         </BrowserRouter>
       </MotionConfig>
