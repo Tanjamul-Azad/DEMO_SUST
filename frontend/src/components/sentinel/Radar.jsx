@@ -9,6 +9,7 @@ import { useRef, useEffect, useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SEVERITY_COLOR } from '../../lib/format.js';
 import { cn } from '../../lib/cn.js';
+import { useUI } from '../../store/ui.js';
 
 /* deterministic angle from a string */
 function hashAngle(str) {
@@ -42,6 +43,7 @@ export default function Radar({ reviews = [], reducedMotion = false }) {
   const sweepAngleRef = useRef(0);
   const trailsRef = useRef({}); // blip id → glow intensity
   const navigate = useNavigate();
+  const theme = useUI((s) => s.theme);
 
   const [tooltip, setTooltip] = useState(null); // { x, y, blip }
   // Memoized so the draw callback and the rAF loop stay stable across renders
@@ -57,6 +59,12 @@ export default function Radar({ reviews = [], reducedMotion = false }) {
       const cy = h / 2;
       const maxR = Math.min(cx, cy) - 12;
 
+      // Theme-aware structural lines: dark ink on Porcelain, light on Obsidian,
+      // so rings/crosshairs stay visible in both themes.
+      const ink = theme === 'light' ? '20, 18, 16' : '255, 255, 255';
+      const ringAlpha = theme === 'light' ? 0.12 : 0.07;
+      const crossAlpha = theme === 'light' ? 0.09 : 0.05;
+
       /* background: subtle radial */
       const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR);
       grad.addColorStop(0, 'rgba(122,92,255,0.06)');
@@ -71,14 +79,14 @@ export default function Radar({ reviews = [], reducedMotion = false }) {
         const r = (maxR * i) / RING_COUNT;
         ctx.beginPath();
         ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+        ctx.strokeStyle = `rgba(${ink}, ${ringAlpha})`;
         ctx.lineWidth = 1;
         ctx.stroke();
       }
 
       /* cross-hair lines */
       ctx.save();
-      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.strokeStyle = `rgba(${ink}, ${crossAlpha})`;
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 6]);
       ctx.beginPath();
@@ -181,7 +189,7 @@ export default function Radar({ reviews = [], reducedMotion = false }) {
       ctx.fillStyle = 'rgba(40,224,200,0.5)';
       ctx.fill();
     },
-    [blips, reducedMotion],
+    [blips, reducedMotion, theme],
   );
 
   /* animation loop */

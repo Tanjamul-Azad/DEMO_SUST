@@ -3,6 +3,7 @@
 // Static poster on prefers-reduced-motion.
 import { useEffect, useRef, useMemo } from 'react';
 import { DEPT_COLOR } from '../../lib/format.js';
+import { useUI } from '../../store/ui.js';
 
 const GATES = [
   { key: 'customer_support', label: 'Support' },
@@ -53,6 +54,7 @@ function StaticPoster({ byDept }) {
 export default function FlowViz({ byDept }) {
   const canvasRef = useRef(null);
   const animRef = useRef(null);
+  const theme = useUI((s) => s.theme);
   const reducedMotion = useMemo(
     () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     [],
@@ -165,8 +167,12 @@ export default function FlowViz({ byDept }) {
     }
 
     function drawGrid() {
+      // Theme-aware guide lines (dark ink on Porcelain, light on Obsidian).
+      const ink = theme === 'light' ? '20, 18, 16' : '255, 255, 255';
+      const aLine = theme === 'light' ? 0.06 : 0.03;
+      const aEntry = theme === 'light' ? 0.08 : 0.04;
       // Subtle horizontal guide lines
-      ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+      ctx.strokeStyle = `rgba(${ink}, ${aLine})`;
       ctx.lineWidth = 1;
       for (let i = 1; i < 8; i++) {
         ctx.beginPath();
@@ -175,7 +181,7 @@ export default function FlowViz({ byDept }) {
         ctx.stroke();
       }
       // Vertical entry line
-      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.strokeStyle = `rgba(${ink}, ${aEntry})`;
       ctx.beginPath();
       ctx.moveTo(20, 0);
       ctx.lineTo(20, H);
@@ -297,7 +303,7 @@ export default function FlowViz({ byDept }) {
       io.disconnect();
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [byDept, reducedMotion]);
+  }, [byDept, reducedMotion, theme]);
 
   if (reducedMotion) {
     return (
