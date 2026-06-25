@@ -61,7 +61,7 @@ export default function Nav() {
               scrolled ? 'glass shadow-[0_18px_50px_-30px_rgba(0,0,0,0.6)]' : '',
             )}
           >
-            <Link to="/" className="group flex items-center gap-2.5" data-cursor>
+            <Link to="/" className="group flex items-center gap-2.5 text-ink" data-cursor>
               <Logo />
               <span className="font-display text-base font-semibold tracking-tight">QueueStorm</span>
             </Link>
