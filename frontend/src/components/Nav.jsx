@@ -69,8 +69,8 @@ export default function Nav() {
             )}
           >
             <Link to="/" className={cn('group flex items-center gap-2.5', overHero ? 'text-[#F4F2EE]' : 'text-ink')} data-cursor>
-              <Logo />
-              <span className="font-display text-base font-semibold tracking-tight">QueueStorm</span>
+              <Logo overHero={overHero} />
+              <span className="font-display text-[16px] font-semibold tracking-tight">QueueStorm</span>
             </Link>
 
             <nav className="hidden items-center gap-1 lg:flex">
@@ -149,11 +149,11 @@ export default function Nav() {
   );
 }
 
-function Logo() {
+function Logo({ overHero }) {
   return (
-    <span className="grid h-8 w-8 place-items-center rounded-lg aurora-bg">
+    <span className={cn("grid h-8 w-8 place-items-center rounded-lg transition-colors duration-500", overHero ? "bg-[#F4F2EE] text-[#0A0A0C]" : "bg-ink text-[rgb(var(--bg-base))]")}>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-        <path d="M4 7h16M7 12h13M4 17h16" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        <path d="M4 7h16M7 12h13M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </svg>
     </span>
   );

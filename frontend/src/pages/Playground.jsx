@@ -56,7 +56,7 @@ export default function Playground() {
             spellCheck={false}
             placeholder="e.g. I sent 5000 taka to a wrong number this morning…"
             className={cn(
-              'w-full resize-none rounded-2xl border border-hairline bg-base/60 p-4 text-base outline-none transition focus:border-violet',
+              'w-full resize-none rounded-2xl border border-hairline bg-base/60 p-4 text-[16px] text-ink outline-none transition focus:border-violet',
               locale === 'bn' && 'font-bn',
             )}
             data-cursor
