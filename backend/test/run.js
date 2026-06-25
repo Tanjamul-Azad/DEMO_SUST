@@ -2,6 +2,7 @@
 // Runs the triage agent directly (no server, no DB writes needed for assertions).
 import { triageAgent } from '../src/agents/triage.js';
 import { piiSafetyScan } from '../src/tools/safety.js';
+import { escalateSeverityRank, keywordRulesClassify } from '../src/tools/rulesClassifier.js';
 import { CASE_TYPES, SEVERITIES, DEPARTMENTS } from '../src/enums.js';
 
 let pass = 0, fail = 0;
@@ -64,7 +65,30 @@ check('scanner passes "we will never ask for your OTP"', piiSafetyScan('We will 
 check('scanner passes "customer was asked for their OTP"', piiSafetyScan('The customer was asked for their OTP by a scammer').passed === true);
 check('scanner passes "do not share your PIN"', piiSafetyScan('Do not share your PIN with anyone').passed === true);
 
-// --- 3. Fallback: works with LLM disabled (triage already runs rules path) ----
+// --- 3. Severity escalation (locks the rules-engine escalation behavior) -----
+console.log('\n== Severity escalation ==');
+// rank ints: low=0, medium=1, high=2, critical=3
+const ESC_TABLE = [
+  // [baseRank, escalation, expectedRank]
+  [2, 0, 2], [2, 1, 2], [2, 2, 3], [2, 3, 3],   // base high (wrong_transfer / payment_failed)
+  [0, 0, 0], [0, 1, 1], [0, 2, 2], [0, 3, 3],   // base low  (other / refund)
+  [1, 0, 1], [1, 1, 2], [1, 2, 2], [1, 3, 3],   // base medium (escalated refund)
+];
+for (const [base, esc, exp] of ESC_TABLE) {
+  check(`escalate(base=${base}, esc=${esc}) -> ${exp}`, escalateSeverityRank(base, esc) === exp);
+}
+// never downgrades below base, always within [low, critical]
+check('escalate never exceeds critical', escalateSeverityRank(2, 99) === 3);
+check('escalate never below base (low, 0)', escalateSeverityRank(0, 0) === 0);
+
+// end-to-end: a single urgency word must NOT push a high case to critical…
+const mildUrgent = keywordRulesClassify('I sent 3000 to wrong number, please help urgently');
+check('wrong_transfer + mild urgency stays high', mildUrgent.severity === 'high');
+// …but account-takeover language must escalate a generic case to critical.
+const takeover = keywordRulesClassify('URGENT! Someone hacked my account and made unauthorized transfers, I lost everything');
+check('account-takeover language escalates to critical', takeover.severity === 'critical');
+
+// --- 4. Fallback: works with LLM disabled (triage already runs rules path) ----
 console.log('\n== Summary ==');
 console.log(`PASS ${pass}  FAIL ${fail}`);
 if (fail > 0) {

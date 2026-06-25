@@ -1,6 +1,6 @@
 // T1 keyword_rules_classify — deterministic, CPU-only classifier (en/bn/mixed).
 // Produces a valid classification on its own; the LLM only augments this.
-import { departmentFor } from '../enums.js';
+import { departmentFor, SEVERITY_RANK as RANK, SEVERITIES as NAME } from '../enums.js';
 
 // --- Signal lexicons. Weighted regexes per case type. Bangla + English + Banglish. ---
 const SIGNALS = {
@@ -80,8 +80,18 @@ function baseSeverity(caseType) {
   }
 }
 
-const RANK = { low: 0, medium: 1, high: 2, critical: 3 };
-const NAME = ['low', 'medium', 'high', 'critical'];
+// Escalate a non-phishing base severity by accumulated signal weight.
+// - any single escalator lifts a sub-`high` case one step toward `high`
+// - strong escalation (weight ≥ 2) may push one rank past `high` into `critical`
+// - overwhelming escalation (weight ≥ 3) forces `critical`
+// Never downgrades below the base rank.
+export function escalateSeverityRank(baseRank, escalation) {
+  const strong = escalation >= 2 ? 1 : 0;
+  let rank = Math.min(RANK.high + strong, baseRank + strong);
+  if (escalation >= 1 && rank < RANK.high) rank += 1;
+  if (escalation >= 3) rank = RANK.critical;
+  return Math.max(RANK.low, Math.min(RANK.critical, rank));
+}
 
 export function keywordRulesClassify(message = '', { channel = null, locale = null } = {}) {
   const text = String(message || '');
@@ -127,14 +137,12 @@ export function keywordRulesClassify(message = '', { channel = null, locale = nu
     // refunds start low; escalate to medium when contested/large/unauthorized.
     if (CONTESTED.test(text) || (amount !== null && amount >= 20000)) sevRank = Math.max(sevRank, RANK.medium);
   }
-  if (topType !== 'phishing_or_social_engineering') {
-    sevRank = Math.min(RANK.critical - 1 + (escalation >= 2 ? 1 : 0), sevRank + (escalation >= 2 ? 1 : escalation >= 1 ? 0 : 0));
-    if (escalation >= 1 && sevRank < RANK.high) sevRank = Math.min(RANK.high, sevRank + 1);
-    if (escalation >= 3) sevRank = RANK.critical;
-  } else {
+  if (topType === 'phishing_or_social_engineering') {
     sevRank = RANK.critical; // phishing is always critical
+  } else {
+    sevRank = escalateSeverityRank(sevRank, escalation);
   }
-  const severity = NAME[Math.max(0, Math.min(3, sevRank))];
+  const severity = NAME[sevRank];
 
   // --- Department ---
   const contested = topType === 'refund_request' && CONTESTED.test(text);
