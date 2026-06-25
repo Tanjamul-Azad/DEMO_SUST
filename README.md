@@ -36,7 +36,7 @@ QueueStorm returns:
 { "ticket_id": "T-001", "case_type": "wrong_transfer", "severity": "high",
   "department": "dispute_resolution",
   "agent_summary": "Customer reports sending 5000 BDT to a wrong number and requests recovery.",
-  "human_review_required": true, "confidence": 0.85 }
+  "human_review_required": false, "confidence": 0.85 }
 ```
 
 **Enums**
@@ -150,6 +150,13 @@ A shared `pii_safety_scanner` tool gates **every** generated string against the 
 
 Requires Node ≥ 18 (tested on 22). No GPU, no secrets. See **[`DEPLOY.md`](./DEPLOY.md)** for the full runbook.
 
+**One command (Python helper)** — installs deps, migrates, seeds, and runs both servers:
+```bash
+python run.py            # http://localhost:5173 (UI) + http://localhost:8787 (API)
+# options: --build (serve prod build) · --llm · --reset · --no-seed · --no-open
+```
+
+**Or run each service manually:**
 ```bash
 # Backend  (terminal 1)  ->  http://localhost:8787
 cd backend

@@ -420,7 +420,7 @@ Build against fixtures in `src/data/` first, then swap to the live API. Validate
 { "ticket_id": "T-001", "case_type": "wrong_transfer", "severity": "high",
   "department": "dispute_resolution",
   "agent_summary": "Customer reports sending 5000 BDT to a wrong number and requests recovery.",
-  "human_review_required": true, "confidence": 0.85 }
+  "human_review_required": false, "confidence": 0.85 }
 ```
 Enums (render exactly): `case_type ∈ {wrong_transfer, payment_failed, refund_request, phishing_or_social_engineering, other}` · `severity ∈ {low, medium, high, critical}` · `department ∈ {customer_support, dispute_resolution, payments_ops, fraud_risk}`.
 Use the **5 public sample cases** from the spec as the default Playground chips and seed data.
