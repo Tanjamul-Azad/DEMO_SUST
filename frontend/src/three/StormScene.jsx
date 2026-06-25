@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -147,14 +147,34 @@ export default function StormScene({ progress }) {
   const reduce = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const count = isMobile ? 3800 : 9000;
 
+  const wrapRef = useRef(null);
+  const [inView, setInView] = useState(true);
+
+  // Stop the GPU render loop entirely once the hero scrolls out of view
+  // (design §9). Cuts idle CPU/GPU/battery while the rest of the page renders.
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return undefined;
+    const io = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { rootMargin: '0px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  const frameloop = reduce ? 'demand' : inView ? 'always' : 'never';
+
   return (
-    <Canvas
-      camera={{ position: [0, 0, 6.2], fov: 50 }}
-      dpr={[1, isMobile ? 1.5 : 2]}
-      gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-      frameloop={reduce ? 'demand' : 'always'}
-    >
-      <Storm progress={progress} count={count} />
-    </Canvas>
+    <div ref={wrapRef} className="h-full w-full">
+      <Canvas
+        camera={{ position: [0, 0, 6.2], fov: 50 }}
+        dpr={[1, isMobile ? 1.5 : 2]}
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+        frameloop={frameloop}
+      >
+        <Storm progress={progress} count={count} />
+      </Canvas>
+    </div>
   );
 }

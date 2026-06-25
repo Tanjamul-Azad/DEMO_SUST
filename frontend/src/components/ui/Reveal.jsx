@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 
-// Scroll-into-view reveal. Honors reduced-motion automatically via framer-motion.
+// Scroll-into-view reveal. Reduced-motion is honored globally via the
+// <MotionConfig reducedMotion="user"> wrapper in main.jsx (the y-translate is
+// dropped and only the opacity fade remains).
 export default function Reveal({ children, y = 28, delay = 0, className = '', once = true }) {
   return (
     <motion.div

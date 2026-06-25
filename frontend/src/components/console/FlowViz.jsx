@@ -266,20 +266,35 @@ export default function FlowViz({ byDept }) {
       animRef.current = requestAnimationFrame(tick);
     }
 
-    animRef.current = requestAnimationFrame(tick);
-
-    const handleVisibility = () => {
-      if (document.hidden) {
+    // Run only while visible AND on-screen: pause for hidden tabs and when the
+    // viz is scrolled out of view, so it never burns CPU in the background.
+    let inView = true;
+    const start = () => {
+      if (animRef.current == null) animRef.current = requestAnimationFrame(tick);
+    };
+    const stop = () => {
+      if (animRef.current != null) {
         cancelAnimationFrame(animRef.current);
-      } else {
-        animRef.current = requestAnimationFrame(tick);
+        animRef.current = null;
       }
     };
+    const sync = () => (inView && !document.hidden ? start() : stop());
+
+    const io = new IntersectionObserver(([entry]) => {
+      inView = entry.isIntersecting;
+      sync();
+    }, { rootMargin: '0px' });
+    io.observe(canvas);
+
+    const handleVisibility = () => sync();
     document.addEventListener('visibilitychange', handleVisibility);
 
+    start();
+
     return () => {
-      cancelAnimationFrame(animRef.current);
+      stop();
       ro.disconnect();
+      io.disconnect();
       document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [byDept, reducedMotion]);

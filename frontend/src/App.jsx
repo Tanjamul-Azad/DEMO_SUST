@@ -4,6 +4,7 @@ import SmoothScroll from './components/SmoothScroll.jsx';
 import Cursor from './components/Cursor.jsx';
 import Nav from './components/Nav.jsx';
 import Footer from './components/Footer.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { PageLoader } from './components/ui/PageHeader.jsx';
 import { useUI } from './store/ui.js';
 
@@ -27,19 +28,21 @@ export default function App() {
       <SmoothScroll>
         <Nav />
         <main>
-          <Suspense fallback={<div className="shell"><PageLoader /></div>}>
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/playground" element={<Playground />} />
-              <Route path="/console" element={<Console />} />
-              <Route path="/sentinel" element={<Sentinel />} />
-              <Route path="/insights" element={<Insights />} />
-              <Route path="/ticket/:id" element={<TicketDetail />} />
-              <Route path="/docs" element={<Docs />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<div className="shell"><PageLoader /></div>}>
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/playground" element={<Playground />} />
+                <Route path="/console" element={<Console />} />
+                <Route path="/sentinel" element={<Sentinel />} />
+                <Route path="/insights" element={<Insights />} />
+                <Route path="/ticket/:id" element={<TicketDetail />} />
+                <Route path="/docs" element={<Docs />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
         </main>
         <Footer />
       </SmoothScroll>

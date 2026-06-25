@@ -178,7 +178,15 @@ npm run dev
 
 ## Deployment runbook
 
-*Required by the task: the repo must let a grader deploy locally if no live URL is provided.* Full step-by-step instructions, env vars, Docker, and hosting notes are in **[`DEPLOY.md`](./DEPLOY.md)**. Quick outline:
+*Required by the task: the repo must let a grader deploy locally if no live URL is provided.* Full step-by-step instructions, env vars, Docker, and hosting notes are in **[`DEPLOY.md`](./DEPLOY.md)**.
+
+**One command (Docker, for a VM):** builds + runs the whole stack (nginx-served UI proxying `/api` to the backend):
+```bash
+python run_onVM.py            # UI on :8080, API on :8787
+# options: --port 80 · --seed · --no-cache · --llm · --status · --logs · --down [--volumes]
+```
+
+Quick manual outline:
 1. **Prerequisites:** Node 20+, SQLite, optionally Ollama with `gemma4` pulled (the service runs fine without it via the rules fallback).
 2. **Configure:** copy `.env.example` → `.env`. No secrets are required (Ollama is local). Set `LLM_ENABLED=false` to run pure-rules.
 3. **Initialize DB:** run the migration to create `queuestorm.db`.

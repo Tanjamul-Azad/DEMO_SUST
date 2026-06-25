@@ -5,7 +5,7 @@
  * Reduced-motion: static frame (no sweep rotation, no pulse).
  */
 
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect, useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SEVERITY_COLOR } from '../../lib/format.js';
 import { cn } from '../../lib/cn.js';
@@ -44,7 +44,10 @@ export default function Radar({ reviews = [], reducedMotion = false }) {
   const navigate = useNavigate();
 
   const [tooltip, setTooltip] = useState(null); // { x, y, blip }
-  const blips = buildBlips(reviews);
+  // Memoized so the draw callback and the rAF loop stay stable across renders
+  // (tooltip hovers + the 5s poll). Also keeps the per-blip hit-test coords
+  // (_bx/_by) on persistent objects between frames and pointer events.
+  const blips = useMemo(() => buildBlips(reviews), [reviews]);
 
   /* draw one frame */
   const draw = useCallback(
@@ -97,20 +100,11 @@ export default function Radar({ reviews = [], reducedMotion = false }) {
       }
 
       if (!reducedMotion) {
-        /* sweep cone */
+        /* sweep cone — translucent wedge rotated to the current sweep angle */
         const coneAngle = Math.PI / 8;
-        const coneGrad = ctx.createConicalGradient
-          ? null // not universally supported
-          : null;
-
-        // Fallback: manual arc fill with gradient sweep
         ctx.save();
         ctx.translate(cx, cy);
         ctx.rotate(sweepAngle);
-        const sweepGrad = ctx.createLinearGradient(0, 0, maxR, 0);
-        sweepGrad.addColorStop(0, 'rgba(40,224,200,0.0)');
-        sweepGrad.addColorStop(0.5, 'rgba(40,224,200,0.12)');
-        sweepGrad.addColorStop(1, 'rgba(40,224,200,0.0)');
 
         ctx.beginPath();
         ctx.moveTo(0, 0);
