@@ -1,0 +1,40 @@
+# QueueStorm full stack for a single VM. Orchestrated by run_onVM.py.
+#   frontend (nginx) :  http://<vm>:${QS_PORT:-8080}   (proxies /api → backend)
+#   backend  (api)   :  http://<vm>:8787                (direct API base for grading)
+services:
+  backend:
+    build: ./backend
+    image: queuestorm-api
+    environment:
+      PORT: "8787"
+      DATABASE_URL: "/data/queuestorm.db"
+      LLM_ENABLED: "${LLM_ENABLED:-false}"
+      OLLAMA_HOST: "${OLLAMA_HOST:-http://localhost:11434}"
+      GEMMA_MODEL: "${GEMMA_MODEL:-gemma4}"
+      CORS_ORIGIN: "*"
+    volumes:
+      - qs-data:/data
+    ports:
+      - "8787:8787"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8787/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 8s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: "/api"
+    image: queuestorm-web
+    depends_on:
+      - backend
+    ports:
+      - "${QS_PORT:-8080}:80"
+    restart: unless-stopped
+
+volumes:
+  qs-data:
