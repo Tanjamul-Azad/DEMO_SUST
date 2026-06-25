@@ -15,6 +15,18 @@ import { insightsAgent, getLatestInsight } from './agents/insights.js';
 const app = express();
 const startedAt = Date.now();
 
+// SQLite `datetime('now')` yields "YYYY-MM-DD HH:MM:SS" in UTC. Normalize to an
+// ISO-8601 string so Date parsing is reliable across engines.
+function sqliteUtcMs(value) {
+  if (!value) return 0;
+  const ms = new Date(String(value).replace(' ', 'T') + 'Z').getTime();
+  return Number.isFinite(ms) ? ms : 0;
+}
+
+// De-duplicate concurrent insight recomputes so a burst of dashboard loads does
+// not run the agent (and append rows) multiple times in parallel.
+let insightsInFlight = null;
+
 app.use(cors({ origin: config.corsOrigin }));
 app.use(express.json({ limit: '256kb' }));
 
@@ -86,12 +98,21 @@ app.post('/tickets/:id/reply', async (req, res) => {
 });
 
 app.get('/insights/summary', async (_req, res) => {
-  let latest = getLatestInsight();
-  // Recompute if none cached or older than 60s.
-  if (!latest || Date.now() - new Date(latest.created_at + 'Z').getTime() > 60_000) {
-    latest = await insightsAgent({ persist: true });
+  try {
+    let latest = getLatestInsight();
+    // Recompute if none cached or older than 60s — sharing one in-flight run.
+    if (!latest || Date.now() - sqliteUtcMs(latest.created_at) > 60_000) {
+      if (!insightsInFlight) {
+        insightsInFlight = insightsAgent({ persist: true })
+          .finally(() => { insightsInFlight = null; });
+      }
+      latest = await insightsInFlight;
+    }
+    res.json(latest);
+  } catch (err) {
+    console.error('[insights] error:', err.message);
+    res.status(500).json({ error: 'internal_error', detail: 'Insights unavailable.' });
   }
-  res.json(latest);
 });
 
 // 404

@@ -255,7 +255,7 @@ export default function Insights() {
                       accent="rgb(var(--champagne))"
                     />
                     <StatTile
-                      label="Median Latency"
+                      label="Avg latency"
                       value={latencyAvg}
                       suffix="ms"
                       decimals={0}
